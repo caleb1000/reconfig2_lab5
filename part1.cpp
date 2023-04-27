@@ -52,16 +52,20 @@ int main(int argc, char* argv[]) {
     queue.submit([&](cl::sycl::handler& handler) {
 
 	cl::sycl::accessor x_d(x_buf, handler, cl::sycl::read_only);
+        //Fix1: Change the permissions on the accessor for y from write_only to read_only as we are reading y (z[i] = x[i] + y[i])
 	cl::sycl::accessor y_d(y_buf, handler, cl::sycl::read_only);
 	cl::sycl::accessor z_d(z_buf, handler, cl::sycl::write_only);
 
 	handler.parallel_for<class vector_add>(cl::sycl::range<1> { NUM_INPUTS }, [=](cl::sycl::id<1> i) {
+            //Fix2: Change the values within the kernel from host memory to device (z_d[i] = x_h[i] + y_h[i]; -------> z_d[i] = x_d[i] + y_d[i];)
 	    z_d[i] = x_d[i] + y_d[i];
 	  });
 
       });
 
     queue.wait();
+
+    //Fix3: Explicitly transfer the outputs to the z_buf
     z_buf.get_access<cl::sycl::access::mode::read>();
 
     // Check for correctness.
