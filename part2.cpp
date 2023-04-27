@@ -89,7 +89,10 @@ int main(int argc, char* argv[]) {
 	cl::sycl::accessor temp(temp_buf, handler, cl::sycl::write_only);
 
 	// TODO: Create a parallel_for to implement the first kernel.
-	
+	handler.parallel_for<class b_x_a_plus_c>(cl::sycl::range<1>{VECTOR_SIZE}, [=](cl::sycl::id<1> i){
+           temp[i] = b * a_d[i] + c;
+        });
+
       });
 
     // Execute the second kernel.
@@ -97,7 +100,17 @@ int main(int argc, char* argv[]) {
 
 	cl::sycl::accessor temp(temp_buf, handler, cl::sycl::read_only);
 	cl::sycl::accessor d_d(d_buf, handler, cl::sycl::write_only);
-	
+	handler.parallel_for<class clip>(cl::sycl::range<1>{VECTOR_SIZE}, [=](cl::sycl::id<1> i){
+           if(temp[i] > 127){
+               d_d[i] = 127;
+           }
+           else if(temp[i] < -128){
+               d_d[i] = -128;
+           }
+           else{
+               d_d[i] = temp[i];
+           }
+        });
 	// TODO: Create a parallel_for to implement the second kernel.
 	
       });
